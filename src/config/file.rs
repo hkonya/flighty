@@ -5,7 +5,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
-const CONFIG_FILE_NAME: &str = ".flighty.yaml";
+const CONFIG_DIR_NAME: &str = ".flighty";
+const CONFIG_FILE_NAME: &str = "config.yaml";
 
 #[derive(Debug)]
 pub struct ConfigFile {
@@ -27,7 +28,8 @@ impl ConfigFile {
     fn find_in_ancestors(start_dir: &Path) -> Result<Self> {
         let mut current_dir = start_dir.to_path_buf();
         loop {
-            let config_path = current_dir.join(CONFIG_FILE_NAME);
+            let config_dir = current_dir.join(CONFIG_DIR_NAME);
+            let config_path = config_dir.join(CONFIG_FILE_NAME);
             if config_path.exists() {
                 return Ok(Self::from_path(config_path));
             }
@@ -44,6 +46,13 @@ impl ConfigFile {
     }
 
     pub fn save<T: Serialize>(&self, config: &T) -> Result<()> {
+        // Dizinin var olduğundan emin ol
+        if let Some(dir) = self.path.parent() {
+            if !dir.exists() {
+                fs::create_dir_all(dir)?;
+            }
+        }
+
         let contents = serde_yaml::to_string(config)?;
         fs::write(&self.path, contents)?;
         Ok(())
