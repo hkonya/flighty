@@ -20,7 +20,7 @@ pub async fn execute(
     };
 
     // Release kanalını belirle
-    let release_channel = if let Some(channel) = channel {
+    let _release_channel = if let Some(channel) = channel {
         match channel.to_lowercase().as_str() {
             "alpha" => ReleaseChannel::Alpha,
             "beta" => ReleaseChannel::Beta,

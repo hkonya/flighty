@@ -1,4 +1,4 @@
-use crate::{config::ConfigFile, Result};
+use crate::Result;
 use std::process::Command;
 use tracing::{debug, info};
 use which::which;

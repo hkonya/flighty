@@ -1,5 +1,4 @@
 use crate::{config::{Config, ConfigFile}, Result};
-use tracing::info;
 
 pub fn execute(key: Option<String>, value: Option<String>) -> Result<()> {
     let config_file = ConfigFile::new()?;
@@ -10,11 +9,11 @@ pub fn execute(key: Option<String>, value: Option<String>) -> Result<()> {
             println!("Mevcut dil: {}", config.language);
             Ok(())
         }
-        (Some(key), None) => {
+        (Some(_key), None) => {
             tracing::info!("Yapılandırma değeri gösterme henüz uygulanmadı");
             Ok(())
         }
-        (Some(key), Some(value)) => {
+        (Some(_key), Some(_value)) => {
             tracing::info!("Yapılandırma değeri ayarlama henüz uygulanmadı");
             Ok(())
         }

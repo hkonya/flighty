@@ -36,13 +36,13 @@ pub async fn execute(platform: Option<String>, target: Option<String>) -> Result
     Ok(())
 }
 
-fn deploy_android_store(config: &Config) -> Result<()> {
+fn deploy_android_store(_config: &Config) -> Result<()> {
     // TODO: Implement Google Play deployment
     info!("Google Play dağıtımı henüz uygulanmadı");
     Ok(())
 }
 
-fn deploy_ios_store(config: &Config) -> Result<()> {
+fn deploy_ios_store(_config: &Config) -> Result<()> {
     // TODO: Implement App Store deployment
     info!("App Store dağıtımı henüz uygulanmadı");
     Ok(())

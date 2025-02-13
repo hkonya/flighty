@@ -14,7 +14,7 @@ pub async fn execute(path: &str) -> Result<()> {
     }
 
     // Varsayılan yapılandırmayı oluştur
-    let config = config_file.create_default::<Config>()?;
+    let _config = config_file.create_default::<Config>()?;
     info!("Varsayılan yapılandırma oluşturuldu");
 
     // Flutter projesini kontrol et
