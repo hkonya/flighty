@@ -1,4 +1,4 @@
-use crate::{config::{Config, ConfigFile}, Result};
+use crate::{fl, config::{Config, ConfigFile}, Result};
 
 pub fn execute(key: Option<String>, value: Option<String>) -> Result<()> {
     let config_file = ConfigFile::new()?;
@@ -6,20 +6,20 @@ pub fn execute(key: Option<String>, value: Option<String>) -> Result<()> {
 
     match (key.as_deref(), value) {
         (Some("language"), None) => {
-            println!("Mevcut dil: {}", config.language);
+            println!("{}", fl!("config-language", lang = config.language));
             Ok(())
         }
         (Some(_key), None) => {
-            tracing::info!("Yapılandırma değeri gösterme henüz uygulanmadı");
+            tracing::info!("{}", fl!("config-show-not-implemented"));
             Ok(())
         }
         (Some(_key), Some(_value)) => {
-            tracing::info!("Yapılandırma değeri ayarlama henüz uygulanmadı");
+            tracing::info!("{}", fl!("config-set-not-implemented"));
             Ok(())
         }
         (None, _) => {
-            println!("Mevcut yapılandırma:");
-            println!("  Dil: {}", config.language);
+            println!("{}", fl!("config-current"));
+            println!("  {}", fl!("config-language", lang = config.language));
             Ok(())
         }
     }

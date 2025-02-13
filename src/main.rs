@@ -7,19 +7,15 @@ use tracing_subscriber::{fmt, EnvFilter};
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    // Yapılandırmadan dili yükle veya sistem dilini kullan
+    // Sistem dilini belirle
+    let system_lang = i18n::detect_system_language();
+    i18n::set_language(&system_lang);
+
+    // Yapılandırmadan dili yükle (eğer varsa)
     if let Ok(config_file) = flighty::config::ConfigFile::new() {
         if let Ok(config) = config_file.load::<flighty::config::Config>() {
             i18n::set_language(&config.language);
-        } else {
-            // Yapılandırma dosyası okunamazsa sistem dilini kullan
-            let system_lang = i18n::detect_system_language();
-            i18n::set_language(&system_lang);
         }
-    } else {
-        // Yapılandırma dosyası bulunamazsa sistem dilini kullan
-        let system_lang = i18n::detect_system_language();
-        i18n::set_language(&system_lang);
     }
 
     // Loglama seviyesini ayarla
@@ -32,6 +28,7 @@ async fn main() -> Result<()> {
         .with_line_number(false)
         .with_thread_names(false)
         .with_level(true)
+        .with_timer(())
         .with_ansi(true)
         .with_writer(std::io::stderr)
         .compact()

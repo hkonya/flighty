@@ -1,6 +1,51 @@
 # Genel
 app-name = Flighty
-app-description = Flutter uygulama dağıtım ve yönetim CLI aracı
+app-description = Flutter Dağıtım Aracı
+app-version = v1.0.0
+
+# Init komutu
+init-prompt = Bu projeyi nasıl adlandıralım?
+init-default-name = my_flutter_app
+
+# Proje adı hataları
+project-name-length-error = Proje adı 3-30 karakter arasında olmalıdır
+project-name-start-error = Proje adı sayı ile başlayamaz
+project-name-chars-error = Sadece küçük harf, sayı ve alt çizgi kullanabilirsiniz
+
+# İşlem adımları
+step-check-flutter = Flutter projesi kontrol ediliyor...
+step-create-structure = Dizin yapısı hazırlanıyor...
+step-update-git = Git yapılandırması güncelleniyor...
+step-create-config = Yapılandırma dosyaları oluşturuluyor...
+
+# Başarı mesajları
+success-init = Flighty başarıyla kuruldu!
+success-app-created = Flighty uygulaması oluşturuldu.
+success-config-created = 'flighty.yaml' dosyası oluşturuldu.
+success-pubspec-updated = 'pubspec.yaml' dosyası güncellendi.
+
+# Komut açıklamaları
+commands-intro = Başlamak için aşağıdaki komutları kullanabilirsiniz:
+command-build = Yeni bir sürüm oluşturmak için
+command-deploy = Güncelleme göndermek için
+command-preview = Önizleme yapmak için
+
+# Hata mesajları
+error-title = Hata Detayı:
+error-solution = Çözüm:
+error-flutter-not-found = Flutter projesi bulunamadı
+error-flutter-sdk-not-found = Flutter SDK bulunamadı
+error-structure-failed = Dizin yapısı oluşturulamadı
+error-git-failed = Git yapılandırması güncellenemedi
+error-config-failed = Yapılandırma dosyaları oluşturulamadı
+
+# Çözüm adımları
+solution-create-project = Önce bir Flutter projesi oluşturun:
+solution-install-sdk = Flutter SDK kurulumunu yapın:
+solution-check-flutter = Flutter kurulumunuzu kontrol edin:
+
+# Dokümantasyon
+docs-more-info = Daha fazla bilgi için:
 
 # Komutlar
 cmd-init = Yeni bir proje başlat
@@ -46,4 +91,20 @@ error-config = Yapılandırma hatası: {$message}
 error-flutter = Flutter CLI hatası: {$message}
 error-io = IO hatası: {$message}
 error-invalid-arg = Geçersiz argüman: {$message}
-error-unknown = Bilinmeyen hata: {$message} 
+error-unknown = Bilinmeyen hata: {$message}
+
+# Debug ve uyarı mesajları
+debug-flutter-doctor = Flutter doctor çalıştırılıyor...
+warn-android-missing = Android dizini bulunamadı
+warn-ios-missing = iOS dizini bulunamadı
+
+# Hata mesajları
+error-message = Hata: {$message}
+error-unknown-occurred = Beklenmeyen bir hata oluştu
+error-flutter-doctor-failed = Flutter doctor başarısız oldu. Lütfen Flutter kurulumunuzu kontrol edin.
+
+# Yapılandırma
+config-current = Mevcut yapılandırma:
+config-language = Dil: {$lang}
+config-show-not-implemented = Yapılandırma değeri gösterme henüz uygulanmadı
+config-set-not-implemented = Yapılandırma değeri ayarlama henüz uygulanmadı 

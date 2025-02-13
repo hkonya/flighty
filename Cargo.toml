@@ -6,6 +6,7 @@ authors = ["Hüseyin Konya"]
 description = "Yerel tabanlı Flutter uygulama dağıtım ve yönetim CLI aracı"
 readme = "README.md"
 license = "MIT"
+build = "i18n_build.rs"
 
 [dependencies]
 # CLI argüman işleme
@@ -30,9 +31,9 @@ which = "5.0"
 # HTTP istekleri
 reqwest = { version = "0.11", features = ["json"] }
 # Terminal UI
-console = "0.15"
-indicatif = "0.17"
-dialoguer = "0.11"
+console = { version = "0.15", features = ["unicode-width"] }
+indicatif = { version = "0.17", features = ["improved_unicode"] }
+dialoguer = { version = "0.11", features = ["fuzzy-select"] }
 # Şifreleme ve güvenlik
 ring = "0.17"
 # Sıkıştırma

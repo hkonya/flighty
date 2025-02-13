@@ -48,7 +48,7 @@ fn deploy_ios_store(_config: &Config) -> Result<()> {
     Ok(())
 }
 
-fn deploy_firebase(config: &Config, platform: &str) -> Result<()> {
+fn deploy_firebase(_config: &Config, platform: &str) -> Result<()> {
     let artifact_path = match platform {
         "android" => "build/app/outputs/flutter-apk/app-release.apk",
         "ios" => "build/ios/ipa/Runner.ipa",

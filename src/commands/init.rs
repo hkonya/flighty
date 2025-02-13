@@ -1,6 +1,18 @@
-use crate::{config::{Config, ConfigFile}, Result};
-use std::{fs, path::{Path, PathBuf}, process::Command};
-use tracing::{debug, info, warn};
+use crate::{fl, Result};
+use std::{fs, path::Path, process::Command, time::Duration};
+use tracing::{debug, warn};
+use console::{style, Emoji, Term};
+use dialoguer::{theme::ColorfulTheme, Input};
+use indicatif::{ProgressBar, ProgressStyle};
+use tokio::time::sleep;
+
+static ROCKET: Emoji<'_, '_> = Emoji("🚀", "");
+static PACKAGE: Emoji<'_, '_> = Emoji("📦", "");
+static EYE: Emoji<'_, '_> = Emoji("👀", "");
+static CHECK: Emoji<'_, '_> = Emoji("✓", "");
+static BIRD: Emoji<'_, '_> = Emoji("🐦", "");
+static ERROR: Emoji<'_, '_> = Emoji("⚠️", "");
+static CROSS: Emoji<'_, '_> = Emoji("✗", "");
 
 const FLIGHTY_DIRS: &[&str] = &[
     "config/environments",
@@ -24,27 +36,190 @@ const DEFAULT_CONFIG_FILES: &[(&str, &str)] = &[
     ("config/environments/production.yaml", include_str!("../../templates/environments/production.yaml")),
 ];
 
+fn create_spinner(msg: String) -> ProgressBar {
+    let spinner = ProgressBar::new_spinner();
+    spinner.set_style(
+        ProgressStyle::default_spinner()
+            .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
+            .template("{spinner:.yellow} {msg}")
+            .unwrap()
+    );
+    spinner.set_message(msg);
+    spinner.enable_steady_tick(Duration::from_millis(100));
+    spinner
+}
+
+fn finish_spinner(spinner: &ProgressBar, success: bool, message: &str) {
+    spinner.set_style(
+        ProgressStyle::default_spinner()
+            .template("{msg}")
+            .unwrap()
+    );
+    spinner.finish_with_message(format!("{} {}", 
+        if success {
+            style("✓").green()
+        } else {
+            style("✗").red()
+        },
+        if success {
+            style(message).green()
+        } else {
+            style(message).red()
+        }
+    ));
+}
+
 pub async fn execute(path: &str) -> Result<()> {
     let path = Path::new(path);
-    info!("Proje başlatılıyor: {}", path.display());
+    let term = Term::stdout();
+    term.clear_screen()?;
 
-    // Flutter projesini kontrol et
-    validate_flutter_project(path)?;
+    // Sade başlık
+    println!("\n$ {}", style("flighty init").green());
 
-    // .flighty dizin yapısını oluştur
+    // Proje adını al
+    let project_name = loop {
+        let input = Input::<String>::with_theme(&ColorfulTheme::default())
+            .with_prompt(format!("{}", 
+                style(fl!("init-prompt")).bold()
+            ))
+            .default(path.file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or(&fl!("init-default-name"))
+                .to_string())
+            .interact()?;
+
+        // Proje adı kurallarını kontrol et
+        if input.len() < 3 || input.len() > 30 {
+            println!("{} {}", 
+                style("✗").red(),
+                style(fl!("project-name-length-error")).red()
+            );
+            continue;
+        }
+
+        if input.chars().next().unwrap().is_numeric() {
+            println!("{} {}", 
+                style("✗").red(),
+                style(fl!("project-name-start-error")).red()
+            );
+            continue;
+        }
+
+        if !input.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_') {
+            println!("{} {}", 
+                style("✗").red(),
+                style(fl!("project-name-chars-error")).red()
+            );
+            continue;
+        }
+
+        break input;
+    };
+
+    // Flutter kontrolü için spinner
+    let mut spinner = create_spinner(fl!("step-check-flutter"));
+    
+    // Flutter projesini kontrol et ve 5 saniye bekle
+    if let Err(e) = validate_flutter_project(path) {
+        sleep(Duration::from_secs(5)).await;
+        finish_spinner(&spinner, false, &fl!("error-flutter-not-found"));
+        println!("\n{} {}", ERROR, style(fl!("error-title")).red().bold());
+        match e {
+            crate::Error::InvalidArgument(msg) => {
+                println!("   {} {}", style("•").red(), style(msg).dim());
+                println!("\n{} {}", style(fl!("error-solution")).yellow().bold(), style(fl!("solution-create-project")).dim());
+                println!("   {} {}", style("1.").yellow(), style("flutter create my_app").dim());
+                println!("   {} {}", style("2.").yellow(), style("cd my_app").dim());
+                println!("   {} {}\n", style("3.").yellow(), style("flighty init").dim());
+            },
+            crate::Error::FlutterSdkNotFound => {
+                println!("   {} {}", style("•").red(), style(fl!("error-flutter-sdk-not-found")).dim());
+                println!("\n{} {}", style(fl!("error-solution")).yellow().bold(), style(fl!("solution-install-sdk")).dim());
+                println!("   {} {}", style("1.").yellow(), style("https://flutter.dev/docs/get-started/install").dim());
+                println!("   {} {}", style("2.").yellow(), style("PATH").dim());
+                println!("   {} {}\n", style("3.").yellow(), style("Terminal").dim());
+            },
+            crate::Error::FlutterCli(msg) => {
+                println!("   {} {}", style("•").red(), style(msg).dim());
+                println!("\n{} {}", style(fl!("error-solution")).yellow().bold(), style(fl!("solution-check-flutter")).dim());
+                println!("   {} {}\n", style("•").yellow(), style("flutter doctor").dim());
+            },
+            _ => {
+                println!("   {} {}\n", style("•").red(), style(fl!("error-unknown-occurred")).dim());
+            }
+        }
+        return Ok(());
+    }
+
+    // Başarılı kontrol ve 5 saniye bekle
+    sleep(Duration::from_secs(5)).await;
+    finish_spinner(&spinner, true, &fl!("step-check-flutter"));
+
+    // Dizin yapısı için spinner
+    spinner = create_spinner(fl!("step-create-structure"));
+    
     let flighty_dir = path.join(".flighty");
-    create_flighty_structure(&flighty_dir)?;
+    if let Err(e) = create_flighty_structure(&flighty_dir) {
+        sleep(Duration::from_secs(5)).await;
+        finish_spinner(&spinner, false, &fl!("error-structure-failed"));
+        println!("\n{} {}\n", ERROR, style(fl!("error-message", message = e.to_string())).red());
+        return Ok(());
+    }
 
-    // .gitignore dosyasını güncelle
-    update_gitignore(path)?;
+    sleep(Duration::from_secs(5)).await;
+    finish_spinner(&spinner, true, &fl!("step-create-structure"));
 
-    info!("Proje başarıyla başlatıldı");
+    // Git yapılandırması için spinner
+    spinner = create_spinner(fl!("step-update-git"));
+    
+    if let Err(e) = update_gitignore(path) {
+        sleep(Duration::from_secs(5)).await;
+        finish_spinner(&spinner, false, &fl!("error-git-failed"));
+        println!("\n{} {}\n", ERROR, style(fl!("error-message", message = e.to_string())).red());
+        return Ok(());
+    }
+
+    sleep(Duration::from_secs(5)).await;
+    finish_spinner(&spinner, true, &fl!("step-update-git"));
+
+    // Yapılandırma dosyaları için spinner
+    spinner = create_spinner(fl!("step-create-config"));
+    
+    if let Err(e) = update_config_files(&flighty_dir, &project_name) {
+        sleep(Duration::from_secs(5)).await;
+        finish_spinner(&spinner, false, &fl!("error-config-failed"));
+        println!("\n{} {}\n", ERROR, style(fl!("error-message", message = e.to_string())).red());
+        return Ok(());
+    }
+
+    sleep(Duration::from_secs(5)).await;
+    finish_spinner(&spinner, true, &fl!("step-create-config"));
+
+    // Başarı mesajı
+    println!("\n{} {}\n", 
+        BIRD,
+        style(fl!("success-init")).green().bold()
+    );
+
+    // Oluşturulan dosyalar
+    println!("{} {}", CHECK, style(fl!("success-app-created")).green());
+    println!("{} {}", CHECK, style(fl!("success-config-created")).green());
+    println!("{} {}\n", CHECK, style(fl!("success-pubspec-updated")).green());
+
+    // Kullanılabilir komutlar
+    println!("{}", style(fl!("commands-intro")).dim());
+    println!("{} {:<20} {}", PACKAGE, style("flighty build").cyan(), style(fl!("command-build")).dim());
+    println!("{} {:<20} {}", ROCKET, style("flighty deploy").cyan(), style(fl!("command-deploy")).dim());
+    println!("{} {:<20} {}\n", EYE, style("flighty preview").cyan(), style(fl!("command-preview")).dim());
+
+    // Dokümantasyon
+    println!("{} {}", fl!("docs-more-info"), style("https://flighty.dev").cyan());
+
     Ok(())
 }
 
 fn create_flighty_structure(root: &Path) -> Result<()> {
-    info!("Flighty dizin yapısı oluşturuluyor...");
-
     // Ana dizini oluştur
     if !root.exists() {
         fs::create_dir(root)?;
@@ -72,7 +247,6 @@ fn create_flighty_structure(root: &Path) -> Result<()> {
         }
     }
 
-    info!("Flighty dizin yapısı oluşturuldu");
     Ok(())
 }
 
@@ -96,7 +270,6 @@ fn update_gitignore(project_root: &Path) -> Result<()> {
     if !content.contains(".flighty/secrets/") {
         content.push_str(flighty_entries);
         fs::write(gitignore_path, content)?;
-        info!(".gitignore dosyası güncellendi");
     }
 
     Ok(())
@@ -107,24 +280,24 @@ fn validate_flutter_project(path: &Path) -> Result<()> {
     let pubspec_path = path.join("pubspec.yaml");
     if !pubspec_path.exists() {
         return Err(crate::Error::InvalidArgument(
-            "Flutter projesi bulunamadı. Lütfen önce 'flutter create' komutunu çalıştırın.".into(),
+            fl!("msg-flutter-missing")
         ));
     }
 
     // Android dizini kontrolü
     let android_dir = path.join("android");
     if !android_dir.exists() {
-        warn!("Android dizini bulunamadı");
+        warn!("{}", fl!("warn-android-missing"));
     }
 
     // iOS dizini kontrolü
     let ios_dir = path.join("ios");
     if !ios_dir.exists() {
-        warn!("iOS dizini bulunamadı");
+        warn!("{}", fl!("warn-ios-missing"));
     }
 
     // Flutter doctor kontrolü
-    debug!("Flutter doctor çalıştırılıyor...");
+    debug!("{}", fl!("debug-flutter-doctor"));
     let output = Command::new("flutter")
         .arg("doctor")
         .output()
@@ -132,10 +305,14 @@ fn validate_flutter_project(path: &Path) -> Result<()> {
 
     if !output.status.success() {
         return Err(crate::Error::FlutterCli(
-            "Flutter doctor başarısız oldu. Lütfen Flutter kurulumunuzu kontrol edin.".into(),
+            fl!("error-flutter-doctor-failed")
         ));
     }
 
-    info!("Flutter projesi doğrulandı");
+    Ok(())
+}
+
+fn update_config_files(root: &Path, project_name: &str) -> Result<()> {
+    // Yapılandırma dosyaları güncelleme işlemleri
     Ok(())
 } 

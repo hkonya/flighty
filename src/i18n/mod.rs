@@ -4,10 +4,26 @@ use once_cell::sync::Lazy;
 use std::{collections::HashMap, fs, path::PathBuf, sync::Mutex};
 use sys_locale::get_locale;
 use unic_langid::LanguageIdentifier;
+use tracing::debug;
 
 // Desteklenen diller
 pub const SUPPORTED_LANGUAGES: &[&str] = &["en", "tr"];
 const DEFAULT_LANGUAGE: &str = "en";
+
+// fl! makrosu
+#[macro_export]
+macro_rules! fl {
+    ($key:expr) => {
+        $crate::i18n::translate($key)
+    };
+    ($key:expr, $($k:ident = $v:expr),*) => {{
+        let mut args = ::std::collections::HashMap::new();
+        $(
+            args.insert(stringify!($k), $v.to_string());
+        )*
+        $crate::i18n::translate_with_args($key, Some(&args))
+    }};
+}
 
 // Global dil yöneticisi
 static I18N: Lazy<Mutex<I18nManager>> = Lazy::new(|| {
@@ -48,13 +64,42 @@ impl I18nManager {
 
     fn create_bundle(&self, lang_code: &str) -> anyhow::Result<FluentBundle<FluentResource>> {
         let mut bundle = FluentBundle::new(vec![lang_code.parse()?]);
-        let path = PathBuf::from(format!("locales/{}/main.ftl", lang_code));
-        let source = fs::read_to_string(path)?;
+        
+        // Dil dosyası yolunu belirle
+        let exe_path = std::env::current_exe()?;
+        let exe_dir = exe_path.parent().ok_or_else(|| anyhow::anyhow!("Executable directory not found"))?;
+        let path = exe_dir.join("locales").join(lang_code).join("main.ftl");
+
+        debug!("Dil dosyası yolu: {}", path.display());
+        
+        // Dosyayı oku
+        let source = match fs::read_to_string(&path) {
+            Ok(content) => content,
+            Err(e) => {
+                debug!("Dil dosyası okunamadı: {} - {}", path.display(), e);
+                // Geliştirme ortamında deneyelim
+                let dev_path = PathBuf::from(format!("locales/{}/main.ftl", lang_code));
+                fs::read_to_string(&dev_path).map_err(|e| {
+                    debug!("Geliştirme dil dosyası da okunamadı: {} - {}", dev_path.display(), e);
+                    anyhow::anyhow!("Failed to read language file: {}", e)
+                })?
+            }
+        };
+
+        // FTL dosyasını ayrıştır
         let resource = FluentResource::try_new(source)
-            .map_err(|(_resource, errors)| anyhow::anyhow!("Failed to parse FTL: {:?}", errors))?;
-        bundle
-            .add_resource(resource)
-            .map_err(|errors| anyhow::anyhow!("Failed to add FTL resource: {:?}", errors))?;
+            .map_err(|(_resource, errors)| {
+                debug!("FTL ayrıştırma hatası: {:?}", errors);
+                anyhow::anyhow!("Failed to parse FTL: {:?}", errors)
+            })?;
+
+        // Bundle'a ekle
+        bundle.add_resource(resource)
+            .map_err(|errors| {
+                debug!("Bundle ekleme hatası: {:?}", errors);
+                anyhow::anyhow!("Failed to add FTL resource: {:?}", errors)
+            })?;
+
         Ok(bundle)
     }
 
@@ -74,6 +119,9 @@ impl I18nManager {
                         .into_owned();
                 }
             }
+            debug!("Mesaj bulunamadı: {}", key);
+        } else {
+            debug!("Bundle bulunamadı: {}", self.current_language);
         }
         key.to_string()
     }

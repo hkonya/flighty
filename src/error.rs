@@ -34,4 +34,7 @@ pub enum Error {
 
     #[error("Bilinmeyen hata: {0}")]
     Unknown(String),
+
+    #[error("Kullanıcı giriş hatası: {0}")]
+    UserInput(#[from] dialoguer::Error),
 } 
