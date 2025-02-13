@@ -1,0 +1,61 @@
+# Production ortamı yapılandırması
+environment: production
+
+# Build ayarları
+build:
+  android:
+    build_type: release
+    split_per_abi: true
+  ios:
+    build_type: release
+    export_method: app-store
+
+# Test ayarları
+test:
+  unit_test:
+    enabled: true
+    coverage: true
+  integration_test:
+    enabled: true
+
+# Kod kalitesi
+quality:
+  lint:
+    enabled: true
+    fatal_warnings: true
+  analyze:
+    enabled: true
+    fatal_warnings: true
+    fatal_infos: true
+
+# Dağıtım ayarları
+distribution:
+  google_play:
+    track: production
+  app_store:
+    export_method: app-store
+  firebase:
+    enabled: false
+
+# Loglama
+logging:
+  level: warn
+
+# Hook'lar
+hooks:
+  pre_build:
+    - name: "Format kontrolü"
+      enabled: true
+  post_build:
+    - name: "APK imzalama"
+      enabled: true
+    - name: "IPA imzalama"
+      enabled: true
+  pre_deploy:
+    - name: "Sürüm notları oluştur"
+      enabled: true
+  post_deploy:
+    - name: "Slack bildirimi"
+      enabled: true
+    - name: "Git tag oluştur"
+      enabled: true 

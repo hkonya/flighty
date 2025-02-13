@@ -1,0 +1,56 @@
+# Staging ortamı yapılandırması
+environment: staging
+
+# Build ayarları
+build:
+  android:
+    build_type: release
+    split_per_abi: true
+  ios:
+    build_type: release
+    export_method: ad-hoc
+
+# Test ayarları
+test:
+  unit_test:
+    enabled: true
+    coverage: true
+  integration_test:
+    enabled: true
+
+# Kod kalitesi
+quality:
+  lint:
+    enabled: true
+    fatal_warnings: true
+  analyze:
+    enabled: true
+    fatal_warnings: true
+    fatal_infos: false
+
+# Dağıtım ayarları
+distribution:
+  google_play:
+    track: internal
+  app_store:
+    export_method: ad-hoc
+  firebase:
+    enabled: true
+
+# Loglama
+logging:
+  level: info
+
+# Hook'lar
+hooks:
+  pre_build:
+    - name: "Format kontrolü"
+      enabled: true
+  post_build:
+    - name: "APK imzalama"
+      enabled: true
+    - name: "IPA imzalama"
+      enabled: true
+  post_deploy:
+    - name: "Slack bildirimi"
+      enabled: true 

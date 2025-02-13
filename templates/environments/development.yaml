@@ -1,0 +1,44 @@
+# Development ortamı yapılandırması
+environment: development
+
+# Build ayarları
+build:
+  android:
+    build_type: debug
+    split_per_abi: false
+  ios:
+    build_type: debug
+    export_method: development
+
+# Test ayarları
+test:
+  unit_test:
+    enabled: true
+    coverage: false
+  integration_test:
+    enabled: false
+
+# Kod kalitesi
+quality:
+  lint:
+    enabled: true
+    fatal_warnings: false
+  analyze:
+    enabled: true
+    fatal_warnings: false
+    fatal_infos: false
+
+# Loglama
+logging:
+  level: debug
+
+# Hook'lar
+hooks:
+  pre_build:
+    - name: "Format kontrolü"
+      enabled: false
+  post_build:
+    - name: "APK imzalama"
+      enabled: false
+    - name: "IPA imzalama"
+      enabled: false 

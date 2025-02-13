@@ -1,6 +1,28 @@
 use crate::{config::{Config, ConfigFile}, Result};
-use std::{path::Path, process::Command};
+use std::{fs, path::{Path, PathBuf}, process::Command};
 use tracing::{debug, info, warn};
+
+const FLIGHTY_DIRS: &[&str] = &[
+    "config/environments",
+    "secrets/android/keystore",
+    "secrets/android/google-play",
+    "secrets/ios/certificates",
+    "secrets/ios/profiles",
+    "logs/builds",
+    "logs/deployments",
+    "logs/errors",
+    "cache/builds",
+    "cache/dependencies",
+];
+
+const DEFAULT_CONFIG_FILES: &[(&str, &str)] = &[
+    ("config/config.yaml", include_str!("../../templates/config.yaml")),
+    ("config/defaults.yaml", include_str!("../../templates/defaults.yaml")),
+    ("config/hooks.yaml", include_str!("../../templates/hooks.yaml")),
+    ("config/environments/development.yaml", include_str!("../../templates/environments/development.yaml")),
+    ("config/environments/staging.yaml", include_str!("../../templates/environments/staging.yaml")),
+    ("config/environments/production.yaml", include_str!("../../templates/environments/production.yaml")),
+];
 
 pub async fn execute(path: &str) -> Result<()> {
     let path = Path::new(path);
@@ -9,23 +31,73 @@ pub async fn execute(path: &str) -> Result<()> {
     // Flutter projesini kontrol et
     validate_flutter_project(path)?;
 
-    // .flighty dizinini oluştur
+    // .flighty dizin yapısını oluştur
     let flighty_dir = path.join(".flighty");
-    if !flighty_dir.exists() {
-        std::fs::create_dir(&flighty_dir)?;
-        info!(".flighty dizini oluşturuldu");
+    create_flighty_structure(&flighty_dir)?;
+
+    // .gitignore dosyasını güncelle
+    update_gitignore(path)?;
+
+    info!("Proje başarıyla başlatıldı");
+    Ok(())
+}
+
+fn create_flighty_structure(root: &Path) -> Result<()> {
+    info!("Flighty dizin yapısı oluşturuluyor...");
+
+    // Ana dizini oluştur
+    if !root.exists() {
+        fs::create_dir(root)?;
+        debug!("Ana dizin oluşturuldu: {}", root.display());
     }
 
-    // Yapılandırma dosyasını oluştur
-    let config_file = ConfigFile::from_path(flighty_dir.join("config.yaml"));
-    if config_file.exists() {
-        info!("Yapılandırma dosyası zaten mevcut");
-        return Ok(());
+    // Alt dizinleri oluştur
+    for dir in FLIGHTY_DIRS {
+        let dir_path = root.join(dir);
+        if !dir_path.exists() {
+            fs::create_dir_all(&dir_path)?;
+            debug!("Dizin oluşturuldu: {}", dir_path.display());
+        }
     }
 
-    // Varsayılan yapılandırmayı oluştur
-    let _config = config_file.create_default::<Config>()?;
-    info!("Varsayılan yapılandırma oluşturuldu");
+    // Varsayılan yapılandırma dosyalarını oluştur
+    for (file, template) in DEFAULT_CONFIG_FILES {
+        let file_path = root.join(file);
+        if !file_path.exists() {
+            if let Some(parent) = file_path.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            fs::write(&file_path, template)?;
+            debug!("Yapılandırma dosyası oluşturuldu: {}", file_path.display());
+        }
+    }
+
+    info!("Flighty dizin yapısı oluşturuldu");
+    Ok(())
+}
+
+fn update_gitignore(project_root: &Path) -> Result<()> {
+    let gitignore_path = project_root.join(".gitignore");
+    let mut content = String::new();
+
+    // Mevcut .gitignore dosyasını oku
+    if gitignore_path.exists() {
+        content = fs::read_to_string(&gitignore_path)?;
+    }
+
+    // Flighty özel girdilerini ekle
+    let flighty_entries = r#"
+# Flighty özel dosyaları
+.flighty/secrets/
+.flighty/logs/
+.flighty/cache/
+"#;
+
+    if !content.contains(".flighty/secrets/") {
+        content.push_str(flighty_entries);
+        fs::write(gitignore_path, content)?;
+        info!(".gitignore dosyası güncellendi");
+    }
 
     Ok(())
 }

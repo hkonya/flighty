@@ -1,0 +1,76 @@
+# Flighty varsayılan ayarlar
+# Bu dosya tüm ortamlar için geçerli olan varsayılan değerleri içerir
+
+# Build ayarları
+build:
+  # Android build ayarları
+  android:
+    flavor: null
+    build_type: release
+    target: lib/main.dart
+    split_per_abi: true
+    build_number_offset: 0
+    version_name_format: "{version}+{build}"
+    
+  # iOS build ayarları
+  ios:
+    flavor: null
+    build_type: release
+    target: lib/main.dart
+    export_method: app-store  # app-store, ad-hoc, development, enterprise
+    build_number_offset: 0
+    version_name_format: "{version}+{build}"
+
+# Test ayarları
+test:
+  unit_test:
+    enabled: true
+    coverage: true
+  integration_test:
+    enabled: true
+    devices: []  # Test edilecek cihazlar
+
+# Kod kalitesi
+quality:
+  lint:
+    enabled: true
+    rules: []  # Özel lint kuralları
+  format:
+    enabled: true
+    line_length: 80
+  analyze:
+    enabled: true
+    fatal_warnings: true
+    fatal_infos: false
+
+# Önbellek ayarları
+cache:
+  enabled: true
+  path: .flighty/cache
+  max_size: 1GB
+  ttl: 7d  # Önbellek yaşam süresi
+
+# Hook'lar için varsayılan komutlar
+hooks:
+  pre_build: []
+  post_build: []
+  pre_deploy: []
+  post_deploy: []
+
+# Varsayılan dağıtım ayarları
+distribution:
+  changelog:
+    enabled: true
+    template: |
+      Version {version} ({build})
+      
+      Changes:
+      {changes}
+  
+  screenshots:
+    enabled: true
+    path: .flighty/assets/screenshots
+    
+  metadata:
+    enabled: true
+    path: .flighty/assets/metadata 

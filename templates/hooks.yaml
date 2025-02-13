@@ -1,0 +1,59 @@
+# Flighty hook'ları
+# Bu dosya build ve dağıtım süreçlerinde çalıştırılacak komutları içerir
+
+# Build öncesi hook'lar
+pre_build:
+  # Kod kalitesi kontrolleri
+  - name: "Format kontrolü"
+    command: "flutter format --set-exit-if-changed ."
+    enabled: true
+    
+  - name: "Lint kontrolü"
+    command: "flutter analyze"
+    enabled: true
+    
+  - name: "Unit testler"
+    command: "flutter test"
+    enabled: true
+
+# Build sonrası hook'lar
+post_build:
+  - name: "APK imzalama"
+    command: "jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore {keystore_path} {apk_path} {key_alias}"
+    enabled: true
+    platforms: [android]
+    
+  - name: "IPA imzalama"
+    command: "codesign -fs {certificate} {ipa_path}"
+    enabled: true
+    platforms: [ios]
+
+# Dağıtım öncesi hook'lar
+pre_deploy:
+  - name: "Sürüm notları oluştur"
+    command: "git log --pretty=format:'%s' {last_tag}..HEAD > CHANGELOG.md"
+    enabled: true
+    
+  - name: "Screenshot'ları güncelle"
+    command: "flutter drive --target=test_driver/screenshots.dart"
+    enabled: true
+
+# Dağıtım sonrası hook'lar
+post_deploy:
+  - name: "Slack bildirimi"
+    command: "curl -X POST -H 'Content-type: application/json' --data '{\"text\":\"Yeni sürüm dağıtıldı: {version}\"}' {webhook_url}"
+    enabled: false
+    
+  - name: "Git tag oluştur"
+    command: "git tag -a v{version} -m 'Version {version}'"
+    enabled: true
+
+# Özel hook'lar
+custom:
+  - name: "Pod update"
+    command: "cd ios && pod update"
+    description: "iOS bağımlılıklarını güncelle"
+    
+  - name: "Gradle update"
+    command: "cd android && ./gradlew --refresh-dependencies"
+    description: "Android bağımlılıklarını güncelle" 

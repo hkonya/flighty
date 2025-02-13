@@ -1,0 +1,60 @@
+# Flighty ana yapılandırma dosyası
+# Bu dosya projenizin temel ayarlarını içerir
+
+# Aktif ortam (development, staging, production)
+environment: development
+
+# Flutter SDK ayarları
+flutter:
+  sdk_path: null  # Flutter SDK yolu (otomatik algılanacak)
+  version: null   # Kullanılacak Flutter versiyonu
+
+# Android yapılandırması
+android:
+  package_name: null  # Android paket adı (pubspec.yaml'dan alınacak)
+  keystore:
+    path: .flighty/secrets/android/keystore/release.keystore
+    password: null
+    key_alias: null
+    key_password: null
+
+# iOS yapılandırması
+ios:
+  bundle_id: null  # iOS bundle ID (pubspec.yaml'dan alınacak)
+  team_id: null    # Apple Developer Team ID
+  certificates:
+    distribution: .flighty/secrets/ios/certificates/distribution.p12
+    development: .flighty/secrets/ios/certificates/development.p12
+  profiles:
+    distribution: .flighty/secrets/ios/profiles/distribution.mobileprovision
+    development: .flighty/secrets/ios/profiles/development.mobileprovision
+
+# Dağıtım ayarları
+distribution:
+  # Google Play Store
+  google_play:
+    credentials: .flighty/secrets/android/google-play/service-account.json
+    track: internal  # internal, alpha, beta, production
+    
+  # App Store Connect
+  app_store:
+    api_key: .flighty/secrets/ios/app-store/api_key.p8
+    api_key_id: null
+    issuer_id: null
+
+# Firebase App Distribution
+firebase:
+  android:
+    app_id: null
+  ios:
+    app_id: null
+  testers: []
+  groups: []
+
+# Dil ayarları
+language: tr  # Varsayılan dil
+
+# Loglama ayarları
+logging:
+  level: info  # debug, info, warn, error
+  output: .flighty/logs  # Log dosyaları dizini 
