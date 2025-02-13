@@ -1,0 +1,1 @@
+// Core modülü şimdilik boş, ileride temel işlevsellik buraya eklenecek 

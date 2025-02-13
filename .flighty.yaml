@@ -1,0 +1,18 @@
+flutter:
+  sdk_path: null
+  version: null
+android:
+  keystore_path: null
+  keystore_password: null
+  key_alias: null
+  key_password: null
+ios:
+  bundle_id: null
+  team_id: null
+  provisioning_profile: null
+  certificate: null
+build:
+  release_channel: alpha
+  version_strategy: semver
+  build_number: null
+language: tr

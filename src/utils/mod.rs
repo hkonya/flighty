@@ -1,0 +1,1 @@
+// Yardımcı fonksiyonlar modülü şimdilik boş 
